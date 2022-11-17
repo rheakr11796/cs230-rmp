@@ -8,7 +8,7 @@ The main files that we updated and created are as follows:
 
 (1) recipes/WSJ0Mix/separation/train.py: Original training file for the SepFormer. The main changes were adding a few commands around file paths in order to fix any training bugs that we encountered. 
 
-(2) recipes/WSJ0Mix/separation/hparams/sepformer.yaml: Hyperparameters file for our existing training task. The main changes involved changing the number of epochs to 20 in order to generate a baseline for the milestone. 
+(2) recipes/WSJ0Mix/separation/hparams/sepformer.yaml: Hyperparameters file for our existing training task. The main changes involved reducing the number of epochs in order to generate a baseline for the milestone. 
 
 (3) recipes/WSJ0Mix/separation/train_new.py: New training file that contains our draft implementation of the updated objective function for SepFormer, which we plan to train our data on for our final project. 
 
