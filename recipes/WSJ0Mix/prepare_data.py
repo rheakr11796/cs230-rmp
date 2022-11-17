@@ -8,7 +8,8 @@ Author
 
 import os
 import csv
-
+import torch
+import gc
 
 def prepare_wsjmix(
     datapath,
@@ -29,7 +30,8 @@ def prepare_wsjmix(
         skip_prep (bool): If True, skip data preparation
         librimix_addnoise: If True, add whamnoise to librimix datasets
     """
-
+    #gc.collect()
+    #torch.cuda.empty_cache()
     if skip_prep:
         return
 
