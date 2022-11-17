@@ -35,17 +35,28 @@ import numpy as np
 from tqdm import tqdm
 import csv
 import logging
-
-
+import gc
+from numba import cuda
 # Define training procedure
 class Separation(sb.Brain):
+    gc.collect()
+    torch.cuda.empty_cache()
+    #print(torch.cuda.memory_reserved(0))
+    #print(torch.cuda.memory_allocated(0))
+    #device = cuda.get_current_device()
+    #device.reset()
+    #cuda.close()
+    #max_split_size_mb:12
+    #print(cuda.isavailable())
+    #print("emptying")
     def compute_forward(self, mix, targets, stage, noise=None):
         """Forward computations from the mixture to the separated signals."""
 
         # Unpack lists and put tensors in the right device
         mix, mix_lens = mix
         mix, mix_lens = mix.to(self.device), mix_lens.to(self.device)
-
+        gc.collect()
+        torch.cuda.empty_cache()
         # Convert targets to tensor
         targets = torch.cat(
             [targets[i][0].unsqueeze(-1) for i in range(self.hparams.num_spks)],
@@ -67,10 +78,16 @@ class Separation(sb.Brain):
                     mix, targets = self.cut_signals(mix, targets)
 
         # Separation
+        #print(mix.shape)
         mix_w = self.hparams.Encoder(mix)
+        #print(mix_w.shape)
         est_mask = self.hparams.MaskNet(mix_w)
+        #print(est_mask.shape)
         mix_w = torch.stack([mix_w] * self.hparams.num_spks)
+        #print(mix_w.shape)
         sep_h = mix_w * est_mask
+        #print(sep_h.shape)
+        
 
         # Decoding
         est_source = torch.cat(
@@ -195,7 +212,7 @@ class Separation(sb.Brain):
             else:
                 self.save_audio(snt_id[0], mixture, targets, predictions)
 
-        return loss.detach()
+        return loss.mean().detach()
 
     def on_stage_end(self, stage, stage_loss, epoch):
         """Gets called at the end of a epoch."""
@@ -335,10 +352,13 @@ class Separation(sb.Brain):
             # Loop over all test sentence
             with tqdm(test_loader, dynamic_ncols=True) as t:
                 for i, batch in enumerate(t):
-
+                    #print("t ", t)
+                    
                     # Apply Separation
                     mixture, mix_len = batch.mix_sig
+                    #print("mixture ", mixture)
                     snt_id = batch.id
+                    #print("batch id ", batch.id)
                     targets = [batch.s1_sig, batch.s2_sig]
                     if self.hparams.num_spks == 3:
                         targets.append(batch.s3_sig)
@@ -538,7 +558,8 @@ if __name__ == "__main__":
         sys.exit(1)
 
     # Data preparation
-    from recipes.WSJ0Mix.prepare_data import prepare_wsjmix  # noqa
+    sys.path.insert(0, '/home/ubuntu/data/speechbrain/recipes/WSJ0Mix')
+    from prepare_data import prepare_wsjmix  # noqa
 
     run_on_main(
         prepare_wsjmix,
